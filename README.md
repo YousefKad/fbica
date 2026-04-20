@@ -170,37 +170,4 @@ print("Bias   :", results["bias"])
 
 ---
 
-## Package structure
 
-```text
-fbica/
-├── __init__.py
-├── imputer.py       # FBICA estimator
-├── dgp.py           # data-generating processes
-├── simulation.py    # Monte Carlo routines
-└── metrics.py       # RMSE, MAE, R²
-
-notebooks/
-├── 01_simulation_demo.ipynb
-└── 02_gdp_nowcasting.ipynb
-
-data/
-├── SQGDP1__ALL_AREAS_2005_2024.csv
-└── Employment-SeasonalAdj.xlsx
-```
-
----
-
-## Use cases
-
-`fbica` is particularly useful for:
-- incomplete multi-variable panels,
-- mixed-frequency macroeconomic data,
-- ragged-edge nowcasting exercises,
-- simulation studies on factor-based imputation.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
