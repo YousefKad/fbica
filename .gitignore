@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ipynb_checkpoints/
+*.pdf
+*.aux
+*.log
+*.out
+*.synctex.gz
+.DS_Store
