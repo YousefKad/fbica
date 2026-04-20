@@ -3,8 +3,6 @@ import pytest
 from fbica import generate_panel, generate_missing
 
 
-# ── generate_panel ────────────────────────────────────────────────────────────
-
 def test_generate_panel_shape():
     X, F, lam, nu = generate_panel(N=10, T=30, m=3, r=2, seed_errors=1)
     assert X.shape == (30, 10, 3)
@@ -31,20 +29,16 @@ def test_generate_panel_different_seeds():
 
 
 def test_generate_panel_fixed_factors_and_loadings():
-    """Fixing F and lam should give identical common components across draws."""
     from fbica.dgp import draw_fixed_factors_and_loadings
     F, lam = draw_fixed_factors_and_loadings(N=10, T=30, m=3, r=2)
     X1, F1, lam1, _ = generate_panel(N=10, T=30, m=3, r=2, _fixed_F=F, _fixed_lam=lam, seed_errors=1)
     X2, F2, lam2, _ = generate_panel(N=10, T=30, m=3, r=2, _fixed_F=F, _fixed_lam=lam, seed_errors=2)
     np.testing.assert_array_equal(F1, F2)
     np.testing.assert_array_equal(lam1, lam2)
-    # Common component X - nu should be identical
     common1 = np.einsum("tr,ibr->tib", F1, lam1)
     common2 = np.einsum("tr,ibr->tib", F2, lam2)
     np.testing.assert_array_almost_equal(common1, common2)
 
-
-# ── generate_missing ──────────────────────────────────────────────────────────
 
 def test_generate_missing_shape(panel):
     X, _, _ = panel
@@ -88,11 +82,11 @@ def test_generate_missing_forced(panel):
     forced = [(0, 0, 0), (5, 3, 1), (10, 7, 2)]
     X_obs, miss = generate_missing(X, miss_probs=0.1, forced_missing=forced, seed=0)
     for (t, i, b) in forced:
-        assert miss[t, i, b], f"Forced cell ({t},{i},{b}) should be missing"
+        assert miss[t, i, b]
         assert np.isnan(X_obs[t, i, b])
 
 
 def test_generate_missing_wrong_prob_length(panel):
     X, _, _ = panel
     with pytest.raises(ValueError, match="miss_probs"):
-        generate_missing(X, miss_probs=[0.1, 0.2])  # m=3 but only 2 probs
+        generate_missing(X, miss_probs=[0.1, 0.2])

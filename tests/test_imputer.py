@@ -3,15 +3,6 @@ import pytest
 from fbica import FBICA
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
-
-def _make_obs(obs_panel):
-    X, X_obs, miss = obs_panel
-    return X, X_obs, miss
-
-
-# ── repr ──────────────────────────────────────────────────────────────────────
-
 def test_repr_unfitted():
     imp = FBICA(use_loo=True)
     assert "not fitted" in repr(imp)
@@ -24,8 +15,6 @@ def test_repr_fitted(obs_panel):
     assert "fitted" in repr(imp)
     assert "not fitted" not in repr(imp)
 
-
-# ── plain FBI-CA ──────────────────────────────────────────────────────────────
 
 class TestPlain:
     def test_output_shape(self, obs_panel):
@@ -48,17 +37,15 @@ class TestPlain:
         imp = FBICA(use_loo=False)
         imp.fit_transform(X_obs)
         T, N, m = X_obs.shape
-        assert imp.fhat_.shape == (T, m)       # plain: (T, m_f)
-        assert imp.lam_hat_.shape == (N, m, m) # (N, m_f, m)
+        assert imp.fhat_.shape == (T, m)
+        assert imp.lam_hat_.shape == (N, m, m)
         assert imp.C_fit_.shape == (T, N, m)
 
-    def test_imputation_reduces_nan_count(self, obs_panel):
-        _, X_obs, miss = obs_panel
+    def test_imputation_removes_all_nans(self, obs_panel):
+        _, X_obs, _ = obs_panel
         X_filled = FBICA(use_loo=False).fit_transform(X_obs)
-        assert np.isnan(X_filled).sum() < np.isnan(X_obs).sum()
+        assert not np.isnan(X_filled).any()
 
-
-# ── LOO FBI-CA ────────────────────────────────────────────────────────────────
 
 class TestLOO:
     def test_output_shape(self, obs_panel):
@@ -81,7 +68,7 @@ class TestLOO:
         imp = FBICA(use_loo=True)
         imp.fit_transform(X_obs)
         T, N, m = X_obs.shape
-        assert imp.fhat_.shape == (N, T, m)    # LOO: (N, T, m_f)
+        assert imp.fhat_.shape == (N, T, m)
         assert imp.lam_hat_.shape == (N, m, m)
         assert imp.C_fit_.shape == (T, N, m)
 
@@ -92,8 +79,6 @@ class TestLOO:
             FBICA(use_loo=True).fit_transform(X)
 
 
-# ── factor_vars ───────────────────────────────────────────────────────────────
-
 class TestFactorVars:
     def test_subset_factor_vars(self, obs_panel):
         _, X_obs, _ = obs_panel
@@ -101,7 +86,7 @@ class TestFactorVars:
         X_filled = imp.fit_transform(X_obs)
         assert not np.isnan(X_filled).any()
         T, N, m = X_obs.shape
-        assert imp.fhat_.shape == (N, T, 2)   # only 2 factor vars
+        assert imp.fhat_.shape == (N, T, 2)
 
     def test_empty_factor_vars_raises(self, obs_panel):
         _, X_obs, _ = obs_panel
@@ -119,27 +104,23 @@ class TestFactorVars:
             FBICA(use_loo=False, factor_vars=[0, 0]).fit_transform(X_obs)
 
 
-# ── input validation ──────────────────────────────────────────────────────────
-
 class TestInputValidation:
     def test_wrong_ndim_raises(self):
         X_2d = np.random.randn(10, 5)
-        with pytest.raises(ValueError, match="3 dimensions"):
+        with pytest.raises(ValueError, match="3-dimensional"):
             FBICA().fit_transform(X_2d)
 
     def test_inf_raises(self, obs_panel):
         _, X_obs, _ = obs_panel
         X_bad = X_obs.copy()
         X_bad[0, 0, 0] = np.inf
-        with pytest.raises(ValueError, match="infinite"):
+        with pytest.raises(ValueError, match="inf"):
             FBICA().fit_transform(X_bad)
 
     def test_non_numeric_raises(self):
         with pytest.raises(TypeError, match="numeric"):
             FBICA().fit_transform([[[None, "a"], [1, 2]]])
 
-
-# ── get_common_component / get_residuals ──────────────────────────────────────
 
 class TestPostFitMethods:
     def test_get_common_component_before_fit_raises(self):
@@ -166,8 +147,6 @@ class TestPostFitMethods:
         assert np.isnan(resid[miss]).all()
         assert not np.isnan(resid[~miss]).any()
 
-
-# ── expanding window ──────────────────────────────────────────────────────────
 
 class TestExpandingWindow:
     def test_output_shape(self, obs_panel):

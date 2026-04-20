@@ -14,8 +14,6 @@ def arrays():
     return X_true, X_imp, mask
 
 
-# ── rmse ──────────────────────────────────────────────────────────────────────
-
 def test_rmse_perfect(arrays):
     X_true, _, mask = arrays
     assert rmse(X_true, X_true, mask) == pytest.approx(0.0)
@@ -41,8 +39,6 @@ def test_rmse_no_mask(arrays):
     assert np.isfinite(val)
 
 
-# ── mae ───────────────────────────────────────────────────────────────────────
-
 def test_mae_perfect(arrays):
     X_true, _, mask = arrays
     assert mae(X_true, X_true, mask) == pytest.approx(0.0)
@@ -60,8 +56,6 @@ def test_mae_no_mask(arrays):
     assert val > 0 and np.isfinite(val)
 
 
-# ── r_squared ─────────────────────────────────────────────────────────────────
-
 def test_r_squared_perfect(arrays):
     X_true, _, mask = arrays
     assert r_squared(X_true, X_true, mask) == pytest.approx(1.0)
@@ -77,10 +71,8 @@ def test_r_squared_constant_true():
     X_true = np.ones((5, 5, 2))
     X_imp = np.ones((5, 5, 2)) * 2
     val = r_squared(X_true, X_imp)
-    assert np.isnan(val)  # ss_tot == 0 → nan by convention
+    assert np.isnan(val)
 
-
-# ── rmse_per_variable ─────────────────────────────────────────────────────────
 
 def test_rmse_per_variable_shape(arrays):
     X_true, X_imp, mask = arrays
@@ -101,8 +93,6 @@ def test_rmse_per_variable_no_mask(arrays):
     assert (out > 0).all()
 
 
-# ── summary_table ─────────────────────────────────────────────────────────────
-
 def test_summary_table_columns(arrays):
     X_true, X_imp, mask = arrays
     df = summary_table(X_true, X_imp, mask)
@@ -113,7 +103,6 @@ def test_summary_table_rows(arrays):
     X_true, X_imp, mask = arrays
     m = X_true.shape[2]
     df = summary_table(X_true, X_imp, mask)
-    # m variable rows + 1 TOTAL row
     assert len(df) == m + 1
     assert "TOTAL" in df.index
 

@@ -4,12 +4,9 @@ from fbica import run_simulation
 from fbica.simulation import compare_loo_vs_plain
 
 
-# Tiny MC settings so tests finish fast.
 _FAST = dict(N=15, T=30, m=3, r=2, phi=0.3, pi=0.0,
              miss_probs=0.15, n_sim=5, verbose=False)
 
-
-# ── run_simulation ────────────────────────────────────────────────────────────
 
 def test_run_simulation_returns_expected_keys():
     res = run_simulation(**_FAST)
@@ -50,13 +47,10 @@ def test_run_simulation_params_recorded():
 
 
 def test_run_simulation_loo_vs_plain_rmse_finite():
-    """Both LOO and plain should give finite RMSE on a small panel."""
     for use_loo in (True, False):
         res = run_simulation(**_FAST, use_loo=use_loo)
         assert np.isfinite(res["rmse"]).all()
 
-
-# ── compare_loo_vs_plain ──────────────────────────────────────────────────────
 
 def test_compare_returns_both_variants(capsys):
     comp = compare_loo_vs_plain(**_FAST)
