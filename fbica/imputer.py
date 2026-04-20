@@ -6,11 +6,8 @@ from numbers import Integral
 class FBICA:
     """
     Factor-Based Imputation via Cross-sectional Averages (FBI-CA).
-
-    use_loo : bool  — exclude unit i from its own factor proxy (reduces bias when m > r).
-    factor_vars : list of int or None  — variables used as factor proxies; None uses all.
-
-    After fit_transform: fhat_, lam_hat_, C_fit_ are set.
+    use_loo : bool  — exclude unit i 
+    factor_vars : list of int or None 
     """
 
     def __init__(self, use_loo=True, factor_vars=None):
