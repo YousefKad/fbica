@@ -24,8 +24,8 @@ Both use the percentile-t method.
 ## Installation
 
 ```bash
-git clone https://github.com/YousefKad/Imputation-of-missing-values-using-cross-section-averages-via-FBI-CA.git
-cd Imputation-of-missing-values-using-cross-section-averages-via-FBI-CA
+git clone https://github.com/YousefKad/fbica.git
+cd fbica
 conda env create -f environment.yml
 conda activate fbica
 ```
