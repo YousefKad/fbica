@@ -13,13 +13,13 @@ class BootstrapResult:
 
 class FBICABootstrap:
     """
-    Bootstrap confidence and prediction intervals for FBI-CA imputations.
+    This code is for Bootstrap confidence and prediction intervals for FBI-CA imputations.
 
-    interval_type : CI targets C_{i,t,b} via block-wild bootstrap
+    The interval_type : CI targets C_{i,t,b} via block-wild bootstrap
                     PI targets x_{i,t,b} via iid pairs bootstrap.
     always_observed : indices of fully observed units. when given, bootstrap
                       factors are drawn from these units only.
-    block_length : block size for CI ("auto" uses ceil(T^{1/3})).
+    block_length : given by block size for CI ("auto" uses ceil(T^{1/3})).
     """
 
     def __init__(
