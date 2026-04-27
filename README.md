@@ -9,39 +9,32 @@ Implementation of the FBI-CA estimator from:
 
 ## Method
 
-FBI-CA imputes missing entries in a panel $X$ of dimension $T \times N \times m$ by approximating the latent common factors with cross-sectional averages. For a missing entry $x_{i,t,b}$, the imputed value is the fitted common component
+FBI-CA imputes missing entries in a panel of dimension T x N x m by using cross-sectional averages as proxies for the latent common factors. For each missing cell, the imputed value is the fitted common component
 
-$$
-\widetilde{C}_{i,t,b} = \hat{\lambda}_{i,b}'\, \hat{f}_{-i,t},
-$$
+&nbsp;&nbsp;&nbsp;&nbsp;C(i,t,b) = lambda(i,b)' * f(t)
 
-where $\hat{f}_{-i,t}$ is the vector of cross-sectional averages across variables at time $t$, excluding unit $i$ (the leave-one-out form), and $\hat{\lambda}_{i,b}$ is estimated by least squares on the observed time periods for unit $i$, variable $b$.
+where the factor proxy f(t) is the vector of cross-sectional averages across variables at time t. In the leave-one-out (LOO) form, unit i is excluded when constructing its own factor proxy, which reduces finite-sample bias when the number of variables exceeds the number of true factors.
 
-**Algorithm.** For each unit $i$ and variable $b$:
+**Algorithm.** For each unit i and variable b:
 
-1. Compute the LOO factor proxy at each $t$:
-$$\hat{f}_{-i,t} = \left(\bar{x}_{-i,t,1},\dots,\bar{x}_{-i,t,m}\right)', \quad \bar{x}_{-i,t,b} = \frac{1}{N_{b,t}}\sum_{j \neq i} d_{j,t,b}\, x_{j,t,b}.$$
+1. Compute the LOO cross-sectional average for each variable and time period, using all observed units except i.
+2. Stack these averages into the factor proxy vector.
+3. Estimate loadings by least squares on the observed time periods for (i, b).
+4. Impute all missing entries for (i, b) using the fitted factor proxy and estimated loadings.
 
-2. Estimate loadings from observed periods:
-$$\hat{\lambda}_{i,b} = \Bigl(\sum_{s:\, d_{i,s,b}=1} \hat{f}_{-i,s}\hat{f}_{-i,s}'\Bigr)^{-1} \Bigl(\sum_{s:\, d_{i,s,b}=1} \hat{f}_{-i,s}\, x_{i,s,b}\Bigr).$$
-
-3. Impute: $\widetilde{C}_{i,t,b} = \hat{\lambda}_{i,b}'\hat{f}_{-i,t}$ for all missing $(i,t,b)$.
-
-Setting `use_loo=False` uses the full cross-section instead of the LOO form.
+Setting `use_loo=False` uses the full cross-section instead.
 
 ---
 
 ## Bootstrap inference
 
-The package provides two types of intervals for a missing cell $(i,t,b)$, via `FBICABootstrap`.
+The package provides two types of intervals for a missing cell, via `FBICABootstrap`.
 
-**Confidence interval (CI)** for the common component $C_{i,t,b} = \lambda_{i,b}'f_t$.  
-Uses a block-wild bootstrap: cross-sectional indices are resampled with replacement, and the time-series residuals are multiplied by Rademacher weights drawn in non-overlapping blocks of length $\lceil T^{1/3}\rceil$. This accounts for temporal dependence in the errors and factors.
+**Confidence interval (CI)** targets the common component. Uses a block-wild bootstrap: cross-sectional indices are resampled with replacement, and time-series residuals are multiplied by Rademacher weights drawn in non-overlapping blocks of length ceil(T^(1/3)). This accounts for temporal dependence.
 
-**Prediction interval (PI)** for the realised value $x_{i,t,b} = C_{i,t,b} + \nu_{i,t,b}$.  
-Uses an iid pairs bootstrap: cross-sectional indices are resampled and centred residuals are drawn with replacement to mimic the idiosyncratic shock at the target cell. PI widths are wider than CI widths because they must also cover the idiosyncratic component.
+**Prediction interval (PI)** targets the realised value, including the idiosyncratic error. Uses an iid pairs bootstrap where centred residuals are resampled to mimic the idiosyncratic shock at the target cell. PI widths are wider than CI widths because they must also cover the idiosyncratic component.
 
-Both intervals are constructed by the percentile-t (reflective) method.
+Both intervals use the percentile-t (reflective) method.
 
 ---
 
@@ -96,7 +89,7 @@ Set `interval_type="PI"` for prediction intervals.
 
 ### Mixed-frequency panels
 
-If variable `0` is low-frequency and variables `1, ..., 8` are high-frequency, restrict the factor proxies to the high-frequency variables:
+If one variable is low-frequency and the rest are high-frequency, restrict the factor proxies to the high-frequency variables:
 
 ```python
 imp = FBICA(use_loo=True, factor_vars=list(range(1, 9)))
@@ -124,8 +117,8 @@ print(res["rmse"], res["bias"])
 
 | Notebook | Content |
 |----------|---------|
-| `notebooks/01_simulation_demo.ipynb` | Imputation demo, RMSE across $(N,T)$ grids, LOO vs plain, spatial dependence |
-| `notebooks/02_bootstrap_coverage.ipynb` | CI and PI coverage at $N=T=25$, replicating the Monte Carlo results in the paper |
+| `notebooks/01_simulation_demo.ipynb` | Imputation demo, RMSE across (N, T) grids, LOO vs plain, spatial dependence |
+| `notebooks/02_bootstrap_coverage.ipynb` | CI and PI coverage at N=T=25, replicating the Monte Carlo results in the paper |
 
 ---
 
