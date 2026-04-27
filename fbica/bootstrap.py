@@ -22,17 +22,7 @@ class FBICABootstrap:
     block_length : given by block size for CI ("auto" uses ceil(T^{1/3})).
     """
 
-    def __init__(
-        self,
-        interval_type   = "CI",
-        use_loo         = True,
-        factor_vars     = None,
-        always_observed = None,
-        block_length    = "auto",
-        B               = 499,
-        alpha           = 0.05,
-        seed            = None,
-    ):
+    def __init__( self,  interval_type   = "CI", use_loo= True,factor_vars  = None,always_observed = None,block_length = "auto",B = 499,alpha= 0.05,seed= None,):
         if interval_type not in ("CI", "PI"):
             raise ValueError("interval_type must be 'CI' or 'PI'.")
         self.interval_type   = interval_type
