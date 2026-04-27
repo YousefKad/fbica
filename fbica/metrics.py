@@ -1,6 +1,10 @@
 import numpy as np
 
 
+'''
+some metrics you can use.
+'''
+
 def rmse(X_true: np.ndarray, X_imputed: np.ndarray, mask: np.ndarray = None) -> float:
     if mask is None:
         diff = X_imputed - X_true
