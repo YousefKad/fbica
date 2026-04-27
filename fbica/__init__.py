@@ -1,10 +1,11 @@
 """
-fbica — Factor-Based Imputation via Cross-sectional Averages
+fbica: Factor-Based Imputation via Cross-sectional Averages
 =============================================================
 Implements the FBI-CA estimator from:
 
-    Bretschneider & Kaddoura (2025)
+    Bretschneider & Kaddoura (2026)
     "Factor-based imputation of missing values using cross-section averages"
+    Enjoy:D!
 """
 
 from .imputer   import FBICA
