@@ -5,9 +5,11 @@ from numbers import Integral
 
 class FBICA:
     """
+    Here is the main class for the algo in the paper. It is given by: 
     factor-Based Imputation via Cross-sectional Averages (FBI-CA).
     use_loo : bool  — exclude unit i 
     factor_vars : list of int or None 
+    Enjoy!:)
     """
 
     def __init__(self, use_loo=True, factor_vars=None):
