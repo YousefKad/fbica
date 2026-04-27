@@ -1,6 +1,8 @@
 import numpy as np
 
-
+'''
+This is just some DGP I use in the notebooks :). You can use whatever DGP you want. 
+'''
 def generate_panel(
     N: int,
     T: int,
