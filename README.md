@@ -2,7 +2,7 @@
 
 Implementation of the FBI-CA estimator from:
 
-> Bretschneider, T. & Kaddoura, Y. (2025).  
+> Bretschneider, T. & Kaddoura, Y. (2026).  
 > *Factor-based imputation of missing values using cross-sectional averages.*
 
 ---
