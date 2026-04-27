@@ -2,9 +2,7 @@ import numpy as np
 from .imputer import FBICA
 from .dgp import generate_panel, generate_missing, draw_fixed_factors_and_loadings
 
-'''
-A simulation study you can start with, but is not really somethinng you need. You can construct any MC you want. 
-'''
+# A basic MC helper — good starting point, but feel free to roll your own.
 
 def run_simulation(
     N: int = 50,

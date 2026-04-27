@@ -54,7 +54,7 @@ class FBICABootstrap:
         point_est = np.array([X_filled[t, i, k] for t, i, k in target_points])
         resid_c   = self._centred_residuals(X, imp)
 
-        fvar_idx = imp._factor_var_idx(m)
+        fvar_idx = imp._fvar_idx(m)
         ao = None if self.always_observed is None else np.asarray(self.always_observed)
 
         if self.interval_type == "CI":

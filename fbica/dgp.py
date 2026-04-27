@@ -1,8 +1,6 @@
 import numpy as np
 
-'''
-This is just some DGP I use in the notebooks :). You can use whatever DGP you want. 
-'''
+# DGP used in the notebooks and MC studies — swap in your own if needed.
 def generate_panel(
     N: int,
     T: int,
@@ -88,7 +86,7 @@ def _draw_loadings(N, m, r, rng):
 
 
 def _draw_errors(T, N, m, phi, pi, L, rng):
-    """Spatiotemporal AR(1) idiosyncratic errors (padded for spatial effects)."""
+    # AR(1) errors with optional spatial cross-unit spillovers; pad to avoid edge effects.
     pad = L + 1
     e = rng.normal(0, 1, (T, N + 2 * pad, m))
     nu = np.zeros((T, N, m))

@@ -4,38 +4,36 @@ from numbers import Integral
 
 
 class FBICA:
-    """factor-Based Imputation via Cross-sectional Averages (FBI-CA).
+    """
+    FBI-CA imputer. Fits loadings by OLS on the LOO cross-sectional averages
+    and fills missing cells with the fitted common component.
 
-    use_loo:      exclude unit i when constructing its factor proxy
-    factor_vars:  which of the m variables to average for the proxy (default: all)
-
-    Enjoy!:)
+    use_loo=True is the default and what the paper uses. set False to use
+    the full cross-section instead (faster but more biased in small samples).
+    factor_vars lets you pick which variables go into the proxy, handy for
+    mixed-frequency panels.
     """
 
     def __init__(self, use_loo=True, factor_vars=None):
-        self.use_loo     = use_loo
+        self.use_loo = use_loo
         self.factor_vars = factor_vars
-        self.fhat_    = None
+        self.fhat_ = None
         self.lam_hat_ = None
-        self.C_fit_   = None
-
-    # ------------------------------------------------------------------ 
+        self.C_fit_ = None
 
     def fit_transform(self, X):
         X = self._check_X(X)
         T, N, m = X.shape
         fvar = self._fvar_idx(m)
-        m_f  = len(fvar)
+        m_f = len(fvar)
 
         if self.use_loo and N < 2:
             raise ValueError(f"LOO needs N>=2, got N={N}.")
 
-        # 1) factor proxy from cross-sectional averages
         X_f = X[:, :, fvar]
         fhat = self._proxy_loo(X_f, fvar) if self.use_loo else self._proxy_plain(X_f, fvar)
         self.fhat_ = fhat
 
-        # 2) per-unit, per-variable OLS loadings
         lam = np.empty((N, m_f, m))
         for i in range(N):
             fi = fhat[i] if self.use_loo else fhat
@@ -50,8 +48,7 @@ class FBICA:
                 lam[i, :, k] = self._ols(fi[obs], X[obs, i, k], i, k)
         self.lam_hat_ = lam
 
-        # 3) common component and fill
-        # C[t,i,b] = lam[i,:,b] @ fhat[i,t,:]   (LOO)   or   lam[i,:,b] @ fhat[t,:]   (plain)
+        # C[t,i,b] = fhat[i,t,:] @ lam[i,:,b]
         C = (np.einsum("idb,itd->tib", lam, fhat) if self.use_loo
              else np.einsum("idb,td->tib", lam, fhat))
 
@@ -76,14 +73,14 @@ class FBICA:
         out = np.full(X.shape, np.nan)
         out[:min_window] = self.fit_transform(X[:min_window])
 
-        rng = range(min_window, T)
+        itr = range(min_window, T)
         if verbose:
-            rng = tqdm(rng, desc="Expanding window")
-        for t in rng:
+            itr = tqdm(itr, desc="Expanding window")
+        for t in itr:
             sub = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars)
             out[t] = sub.fit_transform(X[:t + 1])[t]
 
-        # one final fit on the whole sample so the user can poke at fhat_/lam_hat_/C_fit_
+        # re-fit on the full sample so fhat_/lam_hat_/C_fit_ reflect everything
         full = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars)
         full.fit_transform(X)
         self.fhat_, self.lam_hat_, self.C_fit_ = full.fhat_, full.lam_hat_, full.C_fit_
@@ -102,10 +99,7 @@ class FBICA:
             raise ValueError(f"shape {X.shape} != fitted {self.C_fit_.shape}.")
         return np.where(~np.isnan(X), X - self.C_fit_, np.nan)
 
-    # ---------------------------------------------------------------- internals
-
     def _proxy_plain(self, X_f, fvar):
-        # cross-sectional mean across units; need at least one unit observed per (t, var)
         all_nan = np.isnan(X_f).all(axis=1)
         if all_nan.any():
             t, j = np.argwhere(all_nan)[0]
@@ -115,12 +109,12 @@ class FBICA:
         return np.nanmean(X_f, axis=1)
 
     def _proxy_loo(self, X_f, fvar):
-        # leave-one-out mean: take the totals, subtract unit i's contribution
-        N      = X_f.shape[1]
-        obs    = (~np.isnan(X_f)).astype(float)
-        Xz     = np.where(np.isnan(X_f), 0.0, X_f)
-        s_all  = Xz.sum(axis=1)
-        n_all  = obs.sum(axis=1)
+        # subtract unit i's contribution from the total before dividing
+        N = X_f.shape[1]
+        obs = (~np.isnan(X_f)).astype(float)
+        Xz = np.where(np.isnan(X_f), 0.0, X_f)
+        s_all = Xz.sum(axis=1)
+        n_all = obs.sum(axis=1)
 
         out = np.empty((N,) + s_all.shape)
         for i in range(N):

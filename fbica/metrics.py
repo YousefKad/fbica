@@ -1,9 +1,7 @@
 import numpy as np
 
 
-'''
-some metrics you can use.
-'''
+# RMSE, MAE, R2 — computed only over missing cells when a mask is passed.
 
 def rmse(X_true: np.ndarray, X_imputed: np.ndarray, mask: np.ndarray = None) -> float:
     if mask is None:
