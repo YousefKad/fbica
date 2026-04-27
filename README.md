@@ -1,51 +1,65 @@
-# fbica — Factor-Based Imputation via Cross-Sectional Averages
+# fbica
 
-Implementation of the FBI-CA estimator from:
+Python implementation of the FBI-CA estimator from:
 
-> Bretschneider, T. & Kaddoura, Y. (2026).  
-> *Factor-based imputation of missing values using cross-sectional averages.*
-
----
-
-## Method
-
-FBI-CA imputes missing entries in a panel of dimension \(T \times N \times m\) by using cross-sectional averages as proxies for the latent common factors. For each missing cell, the imputed value is the fitted common component
-
-\[
-C_{i,t,b} = \lambda_{i,b}' f_t
-\]
-
-where the factor proxy \(f_t\) is the vector of cross-sectional averages across variables at time \(t\). In the leave-one-out (LOO) form, unit \(i\) is excluded when constructing its own factor proxy, which reduces finite-sample bias when the number of variables exceeds the number of true factors.
-
-**Algorithm.** For each unit \(i\) and variable \(b\):
-
-1. Compute the LOO cross-sectional average for each variable and time period, using all observed units except \(i\).
-2. Stack these averages into the factor proxy vector.
-3. Estimate loadings by least squares on the observed time periods for \((i,b)\).
-4. Impute all missing entries for \((i,b)\) using the fitted factor proxy and estimated loadings.
-
-Setting `use_loo=False` uses the full cross-section instead.
+> Bretschneider, T. & Kaddoura, Y. (2026). *Factor-based imputation of missing values using cross-sectional averages.*
 
 ---
 
-## Bootstrap inference
+## What it does
 
-The package provides two types of intervals for a missing cell, via `FBICABootstrap`.
+FBI-CA imputes missing values in a panel (T x N x m) by projecting each unit's observations onto cross-sectional averages of the other units, which serve as proxies for the latent common factors. The imputed value for a missing cell is the fitted common component from that projection.
 
-**Confidence interval (CI)** targets the common component. Uses a block-wild bootstrap: cross-sectional indices are resampled with replacement, and time-series residuals are multiplied by Rademacher weights drawn in non-overlapping blocks of length \(\lceil T^{1/3} \rceil\). This accounts for temporal dependence.
+The leave-one-out (LOO) variant — the default — excludes unit i when constructing the factor proxy for unit i, reducing finite-sample bias.
 
-**Prediction interval (PI)** targets the realised value, including the idiosyncratic error. Uses an iid pairs bootstrap where centred residuals are resampled to mimic the idiosyncratic shock at the target cell. PI widths are wider than CI widths because they must also cover the idiosyncratic component.
+The package also provides bootstrap confidence and prediction intervals:
 
-Both intervals use the percentile-\(t\), or reflective, method.
+- **CI** — for the common component. Block-wild bootstrap with block length ceil(T^(1/3)), accounting for temporal dependence.
+- **PI** — for the realised value including the idiosyncratic error. iid pairs bootstrap with residual resampling. Wider than CI by construction.
+
+Both use the percentile-t method.
 
 ---
 
 ## Installation
-
-**conda (recommended)**
 
 ```bash
 git clone https://github.com/YousefKad/Imputation-of-missing-values-using-cross-section-averages-via-FBI-CA.git
 cd Imputation-of-missing-values-using-cross-section-averages-via-FBI-CA
 conda env create -f environment.yml
 conda activate fbica
+```
+
+Or with pip: `pip install -e .`
+
+---
+
+## Usage
+
+```python
+from fbica import FBICA, FBICABootstrap
+
+# X is (T, N, m) with np.nan at missing entries
+imp = FBICA(use_loo=True)
+X_filled = imp.fit_transform(X)
+
+# Bootstrap intervals for specific missing cells
+bs = FBICABootstrap(interval_type="CI", B=499, alpha=0.05)
+result = bs.fit(X_obs, target_points=[(5, 3, 0), (15, 10, 1)])
+
+result.point_est   # imputed values
+result.lower       # lower bounds
+result.upper       # upper bounds
+```
+
+Use `interval_type="PI"` for prediction intervals.
+
+For mixed-frequency panels, pass `factor_vars` to restrict which variables are used to build the factor proxies. For real-time expanding-window imputation, use `fit_transform_expanding`.
+
+---
+
+## Notebooks
+
+`01_simulation_demo.ipynb` — imputation accuracy across panel sizes, LOO vs plain, spatial dependence.
+
+`02_bootstrap_coverage.ipynb` — CI and PI coverage at N=T=25, replicating the Monte Carlo results in the paper.
