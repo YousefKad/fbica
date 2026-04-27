@@ -129,3 +129,13 @@ print(res["rmse"], res["bias"])
 
 ---
 
+## Package structure
+
+```
+fbica/
+├── imputer.py       FBICA estimator
+├── bootstrap.py     FBICABootstrap (CI and PI)
+├── dgp.py           data-generating process
+├── simulation.py    Monte Carlo helper
+└── metrics.py       RMSE, MAE
+```

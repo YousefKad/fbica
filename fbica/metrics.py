@@ -47,7 +47,7 @@ def summary_table(
     mask: np.ndarray,
     var_names=None,
 ) -> "pandas.DataFrame":
-    """Return a pandas DataFrame with MAE, RMSE, R² per variable plus total."""
+    """Return a pandas DataFrame with MAE, RMSE, R2 per variable plus total."""
     import pandas as pd
 
     m = X_true.shape[2]
