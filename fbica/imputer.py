@@ -55,13 +55,11 @@ class FBICA:
         return X_rt
 
     def get_common_component(self):
-        """Return fitted common component C_hat, shape (T, N, m)."""
         if self.C_fit_ is None:
             raise RuntimeError("Call fit_transform() first.")
         return self.C_fit_
 
     def get_residuals(self, X):
-        """Observed residuals e = x - C_hat.  NaN at missing cells."""
         if self.C_fit_ is None:
             raise RuntimeError("Call fit_transform() first.")
         X = self._validate(X, "get_residuals")
