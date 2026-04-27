@@ -171,7 +171,7 @@ class FBICA:
         n, p = f_sub.shape
         if n <= p:
             raise ValueError(
-                f"{mode} loading (i={i}, k={k}): {n} observed rows but {p} regressors — OLS not identified."
+                f"{mode} loading (i={i}, k={k}): {n} observed rows but {p} regressors. OLS not identified."
             )
         self._check_finite(f_sub, f"factor matrix (i={i}, k={k})")
         self._check_finite(z_sub, f"response (i={i}, k={k})")
@@ -212,7 +212,7 @@ class FBICA:
         bad = np.argwhere(all_missing)
         examples = [f"(t={t}, var={fvar_idx[j]})" for t, j in bad[:5]]
         raise ValueError(
-            "Plain FBI-CA: all units missing for some (t, factor_var) — cannot compute cross-sectional mean.  "
+            "Plain FBI-CA: all units missing for some (t, factor_var). Cannot compute cross-sectional mean.  "
             "Locations: " + ", ".join(examples) + "."
         )
 
@@ -231,7 +231,7 @@ class FBICA:
                 why = "no peers left after LOO exclusion"
             examples.append(f"(i={i}, t={t}, var={orig}: {why})")
         raise ValueError(
-            "LOO factor proxy undefined — no peers remain after excluding the target unit.  "
+            "LOO factor proxy undefined. No peers remain after excluding the target unit.  "
             + ", ".join(examples) + "."
         )
 
@@ -240,14 +240,14 @@ class FBICA:
         if np.any(mask):
             t, i, k = np.argwhere(mask)[0]
             raise ValueError(
-                f"Missing entry at (t={t}, i={i}, k={k}) would remain unimputed — C_fit is not finite there."
+                f"Missing entry at (t={t}, i={i}, k={k}) would remain unimputed. C_fit is not finite there."
             )
 
     def _check_no_nan(self, X_filled):
         if np.any(np.isnan(X_filled)):
             t, i, k = np.argwhere(np.isnan(X_filled))[0]
             raise ValueError(
-                f"NaN remains in the filled array at (t={t}, i={i}, k={k}) — likely a pipeline error."
+                f"NaN remains in the filled array at (t={t}, i={i}, k={k}). likely an error."
             )
 
     def _check_finite(self, arr, name):
@@ -259,7 +259,7 @@ class FBICA:
 
     def _underid_msg(self, mode, i, k, n_obs, m_f):
         return (
-            f"{mode} loading (i={i}, k={k}): {n_obs} observed rows but {m_f} regressors — OLS not identified.  "
+            f"{mode} loading (i={i}, k={k}): {n_obs} observed rows but {m_f} regressors. OLS not identified.  "
             f"In mixed-frequency settings try increasing min_window to at least {m_f * 3 + 1} periods, "
             "or reduce factor_vars."
         )
