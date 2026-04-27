@@ -7,7 +7,7 @@ name = "fbica"
 version = "0.1.0"
 description = "Factor-Based Imputation via Cross-sectional Averages"
 readme = "README.md"
-license = { file = "LICENSE" }
+#license = { file = "LICENSE" }
 authors = [
     { name = "Tilman Bretschneider" },
     { name = "Yousef Kaddoura" },
