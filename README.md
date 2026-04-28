@@ -33,7 +33,7 @@ Or with pip: `pip install -e .`
 
 ---
 
-## Here is a basic example:
+## Basic example
 
 ```python
 from fbica import FBICA, FBICABootstrap
@@ -42,16 +42,19 @@ from fbica import FBICA, FBICABootstrap
 imp = FBICA(use_loo=True)
 X_filled = imp.fit_transform(X)
 
-# Bootstrap intervals for specific missing cells
+# CI: block-wild bootstrap for the common component C_{i,t}.
+# Accounts for serial dependence via non-overlapping blocks of length ceil(T^(1/3)).
 bs = FBICABootstrap(interval_type="CI", B=499, alpha=0.05)
-result = bs.fit(X_obs, target_points=[(5, 3, 0), (15, 10, 1)])
+result = bs.fit(X, target_points=[(5, 3, 0), (15, 10, 1)])
+
+# PI: iid pairs bootstrap for the realised value x_{i,t} = C_{i,t} + e_{i,t}.
+# Resamples residuals independently — wider than CI by construction.
+# bs = FBICABootstrap(interval_type="PI", B=499, alpha=0.05)
 
 result.point_est   # imputed values
 result.lower       # lower bounds
 result.upper       # upper bounds
 ```
-
-Use `interval_type="PI"` for prediction intervals.
 
 For mixed-frequency panels, pass `factor_vars` to restrict which variables are used to build the factor proxies. For real-time expanding-window imputation, use `fit_transform_expanding`.
 
