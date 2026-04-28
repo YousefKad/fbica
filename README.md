@@ -15,7 +15,7 @@ The leave-one-out (LOO) variant (the default)  excludes unit i when constructing
 The package also provides bootstrap confidence and prediction intervals:
 
 - **CI** — for the common component. Block-wild bootstrap with block length ceil(T^(1/3)), accounting for temporal dependence.
-- **PI** — for the realised value including the idiosyncratic error. iid pairs bootstrap with residual resampling. Wider than CI by construction.
+- **PI** — for the realised value including the idiosyncratic error. iid pairs bootstrap with residual resampling. 
 
 
 ---
@@ -79,6 +79,6 @@ For mixed-frequency panels, pass `factor_vars` to restrict which variables are u
 
 ## Notebooks
 
-`01_simulation_demo.ipynb` — imputation accuracy across panel sizes, LOO vs plain, spatial dependence.
+`01_simulation_demo.ipynb`. imputation accuracy across panel sizes, LOO vs plain, spatial dependence.
 
-`02_bootstrap_coverage.ipynb` — CI and PI coverage at N=T=25, replicating the Monte Carlo results in the paper.
+`02_bootstrap_coverage.ipynb`. CI and PI coverage at N=T=25, replicating the Monte Carlo results in the paper.
