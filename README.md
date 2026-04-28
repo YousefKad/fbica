@@ -48,7 +48,7 @@ bs = FBICABootstrap(interval_type="CI", B=499, alpha=0.05)
 result = bs.fit(X, target_points=[(5, 3, 0), (15, 10, 1)])
 
 # PI: iid pairs bootstrap for the realised value x_{i,t} = C_{i,t} + e_{i,t}.
-# Resamples residuals independently — wider than CI by construction.
+# Resamples residuals independently.
 # bs = FBICABootstrap(interval_type="PI", B=499, alpha=0.05)
 
 result.point_est   # imputed values
