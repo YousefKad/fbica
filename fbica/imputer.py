@@ -7,6 +7,10 @@ class FBICA:
     """
     FBI-CA imputer. Fits loadings by OLS on the cross-sectional average factor
     proxy and fills missing cells with the fitted common component.
+
+    use_loo=True (default) uses leave-one-out averages as in the paper.
+    Set always_observed to pass a block of fully observed units as the proxy
+    instead — use_loo is ignored in that case.
     """
 
     def __init__(self, use_loo=True, factor_vars=None, always_observed=None):
@@ -29,8 +33,6 @@ class FBICA:
 
         X_f = X[:, :, fvar]
         if ao is not None:
-            # tall-block proxy: use_loo is irrelevant here because i_pt
-            # is never in ao by construction
             fhat = self._proxy_always_observed(X_f, fvar, ao)
         elif self.use_loo:
             fhat = self._proxy_loo(X_f, fvar)
@@ -81,19 +83,13 @@ class FBICA:
         if verbose:
             itr = tqdm(itr, desc="Expanding window")
         for t in itr:
-            sub = FBICA(
-                use_loo=self.use_loo,
-                factor_vars=self.factor_vars,
-                always_observed=self.always_observed,
-            )
+            sub = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars,
+                        always_observed=self.always_observed)
             out[t] = sub.fit_transform(X[:t + 1])[t]
 
         # re-fit on the full sample so fhat_/lam_hat_/C_fit_ reflect everything
-        full = FBICA(
-            use_loo=self.use_loo,
-            factor_vars=self.factor_vars,
-            always_observed=self.always_observed,
-        )
+        full = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars,
+                     always_observed=self.always_observed)
         full.fit_transform(X)
         self.fhat_, self.lam_hat_, self.C_fit_ = full.fhat_, full.lam_hat_, full.C_fit_
         return out
@@ -169,25 +165,14 @@ class FBICA:
     def _validate_always_observed(self, X, fvar):
         if self.always_observed is None:
             return None
-
-        try:
-            ao_raw = list(self.always_observed)
-        except TypeError as exc:
-            raise ValueError("always_observed must be a sequence of unit indices.") from exc
-        if not ao_raw:
-            raise ValueError("always_observed must contain at least one unit index.")
-        if any(not isinstance(i, Integral) or isinstance(i, bool) for i in ao_raw):
-            raise ValueError("always_observed entries must be integers.")
-
-        ao = np.asarray(ao_raw, dtype=int)
+        ao = np.asarray(list(self.always_observed), dtype=int)
         N = X.shape[1]
-        bad = ao[(ao < 0) | (ao >= N)]
-        if bad.size:
-            raise ValueError(f"always_observed has out-of-bounds unit index {bad[0]} for N={N}.")
+        if ao.size == 0 or (ao < 0).any() or (ao >= N).any():
+            raise ValueError(f"always_observed has invalid unit indices for N={N}.")
         if len(set(ao.tolist())) != len(ao):
             raise ValueError("always_observed has duplicates.")
         if np.isnan(X[:, ao, :][:, :, fvar]).any():
-            raise ValueError("always_observed units must be observed for all factor variables.")
+            raise ValueError("always_observed units must be fully observed for factor vars.")
         return ao
 
     def _check_X(self, X):

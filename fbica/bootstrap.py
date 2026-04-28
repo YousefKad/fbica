@@ -10,26 +10,20 @@ from .imputer import FBICA
 @dataclass
 class BootstrapResult:
     point_est: np.ndarray  # (n_targets,)
-    lower: np.ndarray      # (n_targets,)
-    upper: np.ndarray      # (n_targets,)
-    draws: np.ndarray      # (B, n_targets) raw bootstrap draws
+    lower: np.ndarray
+    upper: np.ndarray
+    draws: np.ndarray      # (B, n_targets)
+
 
 class FBICABootstrap:
-    """
-   This applies the bootstrap algorithm. 
+    """Bootstrap CI/PI for FBI-CA imputations.
+
+    interval_type="CI" uses a block-wild bootstrap (Algorithm 1).
+    interval_type="PI" uses an iid pairs bootstrap (Algorithm 2).
     """
 
-    def __init__(
-        self,
-        interval_type="CI",
-        use_loo=True,
-        factor_vars=None,
-        always_observed=None,
-        block_length="auto",
-        B=499,
-        alpha=0.05,
-        seed=None,
-    ):
+    def __init__(self, interval_type="CI", use_loo=True, factor_vars=None,
+                 always_observed=None, block_length="auto", B=499, alpha=0.05, seed=None):
         if interval_type not in ("CI", "PI"):
             raise ValueError("interval_type must be 'CI' or 'PI'.")
         if not isinstance(B, Integral) or isinstance(B, bool) or B <= 0:
@@ -50,26 +44,33 @@ class FBICABootstrap:
         X = np.asarray(X, dtype=float)
         T, N, m = X.shape
         rng = np.random.default_rng(self.seed)
-        target_points = self._validate_target_points(target_points, T, N, m)
 
-        imp = FBICA(
-            use_loo=self.use_loo,
-            factor_vars=self.factor_vars,
-            always_observed=self.always_observed,
-        )
+        target_points = self._check_targets(target_points, T, N, m)
+
+        imp = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars,
+                    always_observed=self.always_observed)
         X_filled = imp.fit_transform(X)
         point_est = np.array([X_filled[t, i, k] for t, i, k in target_points])
         resid_c = self._centred_residuals(X, imp)
 
         fvar_idx = imp._fvar_idx(m)
-        ao = self._validate_always_observed(X, fvar_idx)
+        ao = None if self.always_observed is None else np.asarray(list(self.always_observed), dtype=int)
 
         if self.interval_type == "CI":
             draws = self._loop_ci(X, imp, resid_c, target_points, fvar_idx, ao, rng)
         else:
             draws = self._loop_pi(X, imp, resid_c, target_points, fvar_idx, ao, rng)
 
-        self._check_valid_draws(draws)
+        # check we actually got draws
+        valid = np.isfinite(draws).sum(axis=0)
+        if (valid == 0).any():
+            j = int(np.where(valid == 0)[0][0])
+            raise ValueError(f"no valid bootstrap draws for target index {j}.")
+        low = max(10, int(np.ceil(0.1 * self.B)))
+        if (valid < low).any():
+            j = int(np.where(valid < low)[0][0])
+            warnings.warn(f"few valid draws for target {j}: {int(valid[j])}/{self.B}.",
+                          RuntimeWarning, stacklevel=2)
 
         a = self.alpha
         q_lo = np.nanquantile(draws, a / 2, axis=0)
@@ -173,72 +174,7 @@ class FBICABootstrap:
             return ao[rng.integers(0, len(ao), size=len(ao))]
         return rng.integers(0, N, size=N)
 
-    def _validate_target_points(self, target_points, T, N, m):
-        out = []
-        for p in target_points:
-            try:
-                if len(p) != 3:
-                    raise ValueError("each target point must be a (t, i, k) triple.")
-                t, i, k = p
-            except TypeError as exc:
-                raise ValueError("each target point must be a (t, i, k) triple.") from exc
-            vals = (t, i, k)
-            if any(not isinstance(v, Integral) or isinstance(v, bool) for v in vals):
-                raise ValueError(f"target point entries must be integers, got {p!r}.")
-            if not (0 <= t < T and 0 <= i < N and 0 <= k < m):
-                raise ValueError(
-                    f"target point {p!r} is out of bounds for X.shape={T, N, m}."
-                )
-            out.append((int(t), int(i), int(k)))
-        if not out:
-            raise ValueError("target_points must contain at least one target.")
-        return out
-
-    def _validate_always_observed(self, X, fvar_idx):
-        if self.always_observed is None:
-            return None
-
-        try:
-            ao_raw = list(self.always_observed)
-        except TypeError as exc:
-            raise ValueError("always_observed must be a sequence of unit indices.") from exc
-        if not ao_raw:
-            raise ValueError("always_observed must contain at least one unit index.")
-        if any(not isinstance(i, Integral) or isinstance(i, bool) for i in ao_raw):
-            raise ValueError("always_observed entries must be integers.")
-
-        ao = np.asarray(ao_raw, dtype=int)
-        N = X.shape[1]
-        bad = ao[(ao < 0) | (ao >= N)]
-        if bad.size:
-            raise ValueError(
-                f"always_observed has out-of-bounds unit index {bad[0]} for N={N}."
-            )
-        if len(set(ao.tolist())) != len(ao):
-            raise ValueError("always_observed has duplicates.")
-        if np.isnan(X[:, ao, :][:, :, fvar_idx]).any():
-            raise ValueError("always_observed units must be observed for all factor variables.")
-        return ao
-
-    def _check_valid_draws(self, draws):
-        valid = np.isfinite(draws).sum(axis=0)
-        if (valid == 0).any():
-            j = int(np.where(valid == 0)[0][0])
-            raise ValueError(f"no valid bootstrap draws for target index {j}.")
-
-        low = min(self.B, max(10, int(np.ceil(0.1 * self.B))))
-        weak = np.where(valid < low)[0]
-        if weak.size:
-            j = int(weak[0])
-            warnings.warn(
-                f"few valid bootstrap draws for target index {j}: "
-                f"{int(valid[j])}/{self.B}.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
     def _f_star(self, X, boot_idx, i_pt, fvar_idx, ao):
-        # tall-block: use_loo is irrelevant because i_pt is never in ao
         if ao is not None:
             f = np.nanmean(X[:, boot_idx, :][:, :, fvar_idx], axis=1)
         elif self.use_loo:
@@ -264,6 +200,17 @@ class FBICABootstrap:
                 if mask.any():
                     resid_c[mask, i, k] -= np.nanmean(resid[mask, i, k])
         return resid_c
+
+    def _check_targets(self, target_points, T, N, m):
+        out = []
+        for p in target_points:
+            t, i, k = p
+            if not (0 <= t < T and 0 <= i < N and 0 <= k < m):
+                raise ValueError(f"target {(t, i, k)} out of bounds for X of shape {(T, N, m)}.")
+            out.append((int(t), int(i), int(k)))
+        if not out:
+            raise ValueError("target_points is empty.")
+        return out
 
     def _block_len(self, T):
         if self.block_length == "auto":
