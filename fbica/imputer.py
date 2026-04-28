@@ -26,14 +26,14 @@ class FBICA:
         T, N, m = X.shape
         fvar = self._fvar_idx(m)
         m_f = len(fvar)
-        ao = self._validate_always_observed(X, fvar)
+        ao = self._check_always_observed(X, fvar)
 
         if ao is None and self.use_loo and N < 2:
             raise ValueError(f"LOO needs N>=2, got N={N}.")
 
         X_f = X[:, :, fvar]
         if ao is not None:
-            fhat = self._proxy_always_observed(X_f, fvar, ao)
+            fhat = self._proxy_always_observed(X_f, ao)
         elif self.use_loo:
             fhat = self._proxy_loo(X_f, fvar)
         else:
@@ -116,7 +116,7 @@ class FBICA:
             )
         return np.nanmean(X_f, axis=1)
 
-    def _proxy_always_observed(self, X_f, fvar, ao):
+    def _proxy_always_observed(self, X_f, ao):
         fhat = np.nanmean(X_f[:, ao, :], axis=1)
         if not np.isfinite(fhat).all():
             raise ValueError("always_observed proxy is non-finite.")
@@ -162,7 +162,7 @@ class FBICA:
                 raise ValueError(f"bad factor_vars entry: {j!r} (m={m}).")
         return idx
 
-    def _validate_always_observed(self, X, fvar):
+    def _check_always_observed(self, X, fvar):
         if self.always_observed is None:
             return None
         ao = np.asarray(list(self.always_observed), dtype=int)

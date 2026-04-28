@@ -10,8 +10,8 @@ from .imputer import FBICA
 @dataclass
 class BootstrapResult:
     point_est: np.ndarray  # (n_targets,)
-    lower: np.ndarray
-    upper: np.ndarray
+    lower: np.ndarray      # (n_targets,)
+    upper: np.ndarray      # (n_targets,)
     draws: np.ndarray      # (B, n_targets)
 
 
@@ -54,7 +54,8 @@ class FBICABootstrap:
         resid_c = self._centred_residuals(X, imp)
 
         fvar_idx = imp._fvar_idx(m)
-        ao = None if self.always_observed is None else np.asarray(list(self.always_observed), dtype=int)
+        ao = (None if self.always_observed is None
+              else np.asarray(list(self.always_observed), dtype=int))
 
         if self.interval_type == "CI":
             draws = self._loop_ci(X, imp, resid_c, target_points, fvar_idx, ao, rng)
