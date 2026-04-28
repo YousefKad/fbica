@@ -14,35 +14,9 @@ class BootstrapResult:
     upper: np.ndarray      # (n_targets,)
     draws: np.ndarray      # (B, n_targets) raw bootstrap draws
 
-
 class FBICABootstrap:
     """
-    Bootstrap confidence and prediction intervals for FBI-CA imputations.
-
-    Parameters
-    ----------
-    interval_type : {"CI", "PI"}
-        "CI" targets C_{i,t,b} via the block-wild bootstrap (Algorithm 1).
-        "PI" targets x_{i,t,b} via the iid pairs bootstrap (Algorithm 2).
-    use_loo : bool, default True
-        Whether the original fit and bootstrap factor proxy use the
-        leave-one-out cross-sectional average. Silently ignored when
-        ``always_observed`` is set, since the tall-block proxy already
-        excludes the imputation target.
-    factor_vars : sequence of int or None
-        Variables used for the factor proxy.
-    always_observed : sequence of int or None
-        Optional indices of fully observed units used to build the factor
-        proxy. When set, both the original fit and the bootstrap proxy
-        resample within this block.
-    block_length : "auto" or int
-        Block size for the CI bootstrap. "auto" uses ceil(T^{1/3}).
-    B : int
-        Number of bootstrap draws.
-    alpha : float
-        Significance level (CI/PI is at 1 - alpha).
-    seed : int or None
-        Random seed.
+   This applies the bootstrap algorithm. 
     """
 
     def __init__(
