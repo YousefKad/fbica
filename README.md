@@ -2,9 +2,7 @@
 
 Python implementation of the FBI-CA estimator from:
 
-> Bretschneider, T. & Kaddoura, Y. (2026). *Factor-based imputation of missing values using cross-sectional averages.*
-
----
+ Bretschneider, T. & Kaddoura, Y. (2026). *Factor-based imputation of missing values using cross-sectional averages.*
 
 ## What it does
 
@@ -18,8 +16,6 @@ The package also provides bootstrap confidence and prediction intervals:
 - **PI** — for the realised value including the idiosyncratic error. iid pairs bootstrap with residual resampling. 
 
 
----
-
 ## Installation
 
 ```bash
@@ -31,7 +27,6 @@ conda activate fbica
 
 Or with pip: `pip install -e .`
 
----
 
 ## Basic example
 
@@ -75,7 +70,6 @@ bs = FBICABootstrap(interval_type="CI", use_loo=False, B=499)
 
 For mixed-frequency panels, pass `factor_vars` to restrict which variables are used to build the factor proxies. For real-time expanding-window imputation, use `fit_transform_expanding`.
 
----
 
 ## Notebooks
 
