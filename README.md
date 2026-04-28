@@ -56,7 +56,7 @@ result.lower       # lower bounds
 result.upper       # upper bounds
 ```
 
-If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average.
+If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average. Make sure to pass the same indices to both `FBICA` and `FBICABootstrap` — otherwise the bootstrap proxy won't match the original fit:
 
 ```python
 # units 0–4 are always observed. Use them as the factor proxy
