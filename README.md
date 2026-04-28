@@ -61,7 +61,7 @@ In general, `FBICA` and `FBICABootstrap` should always be given the same proxy s
 If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average. Same rule applies for `use_loo=False`:
 
 ```python
-# units 0–4 are always observed — use them as the factor proxy
+#  for example, if units 0–4 are always observed, use them as the factor proxy (if you want to impose the tall block, clearly)
 imp = FBICA(always_observed=[0, 1, 2, 3, 4])
 X_filled = imp.fit_transform(X)
 
