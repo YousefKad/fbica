@@ -10,7 +10,7 @@ class FBICA:
 
     use_loo=True (default) uses leave-one-out averages as in the paper.
     Set always_observed to pass a block of fully observed units as the proxy
-    instead — use_loo is ignored in that case.
+    instead  (use_loo is ignored in that case).
     """
 
     def __init__(self, use_loo=True, factor_vars=None, always_observed=None):
