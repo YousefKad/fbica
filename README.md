@@ -59,7 +59,7 @@ result.upper       # upper bounds
 If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average.
 
 ```python
-# units 0–4 are always observed — use them as the factor proxy
+# units 0–4 are always observed. Use them as the factor proxy
 imp = FBICA(always_observed=[0, 1, 2, 3, 4])
 X_filled = imp.fit_transform(X)
 
