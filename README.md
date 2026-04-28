@@ -56,7 +56,7 @@ result.lower       # lower bounds
 result.upper       # upper bounds
 ```
 
-In general, `FBICA` and `FBICABootstrap` should always be given the same proxy settings (`use_loo`, `factor_vars`, `always_observed`) — the bootstrap builds its factor proxy the same way as the original fit, so any mismatch will give inconsistent intervals.
+In general, `FBICA` and `FBICABootstrap` should always be given the same proxy settings (`use_loo`, `factor_vars`, `always_observed`). The bootstrap builds its factor proxy the same way as the original fit, so any mismatch will give inconsistent intervals.
 
 If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average. Same rule applies for `use_loo=False`:
 
