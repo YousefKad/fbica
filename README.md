@@ -10,7 +10,7 @@ Python implementation of the FBI-CA estimator from:
 
 FBI-CA imputes missing values in a panel (T x N x m) by projecting each unit's observations onto cross-sectional averages of the other units, which serve as proxies for the latent common factors. The imputed value for a missing cell is the fitted common component from that projection.
 
-The leave-one-out (LOO) variant (the default)  excludes unit i when constructing the factor proxy for unit i to reducing finite-sample bias.
+The leave-one-out (LOO) variant (the default)  excludes unit i when constructing the factor proxy for unit i.
 
 The package also provides bootstrap confidence and prediction intervals:
 
