@@ -56,15 +56,21 @@ result.lower       # lower bounds
 result.upper       # upper bounds
 ```
 
-If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average. Make sure to pass the same indices to both `FBICA` and `FBICABootstrap` — otherwise the bootstrap proxy won't match the original fit:
+In general, `FBICA` and `FBICABootstrap` should always be given the same proxy settings (`use_loo`, `factor_vars`, `always_observed`) — the bootstrap builds its factor proxy the same way as the original fit, so any mismatch will give inconsistent intervals.
+
+If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average. Same rule applies for `use_loo=False`:
 
 ```python
-# units 0–4 are always observed. Use them as the factor proxy
+# units 0–4 are always observed — use them as the factor proxy
 imp = FBICA(always_observed=[0, 1, 2, 3, 4])
 X_filled = imp.fit_transform(X)
 
 bs = FBICABootstrap(interval_type="CI", always_observed=[0, 1, 2, 3, 4], B=499)
 result = bs.fit(X, target_points=[(5, 10, 0)])
+
+# same applies when turning off LOO
+imp = FBICA(use_loo=False)
+bs = FBICABootstrap(interval_type="CI", use_loo=False, B=499)
 ```
 
 For mixed-frequency panels, pass `factor_vars` to restrict which variables are used to build the factor proxies. For real-time expanding-window imputation, use `fit_transform_expanding`.
