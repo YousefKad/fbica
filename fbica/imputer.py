@@ -5,18 +5,29 @@ from numbers import Integral
 
 class FBICA:
     """
-    FBI-CA imputer. Fits loadings by OLS on the LOO cross-sectional averages
-    and fills missing cells with the fitted common component.
+    FBI-CA imputer. Fits loadings by OLS on the cross-sectional average factor
+    proxy and fills missing cells with the fitted common component.
 
-    use_loo=True is the default and what the paper uses. set False to use
-    the full cross-section instead (faster but more biased in small samples).
-    factor_vars lets you pick which variables go into the proxy, handy for
-    mixed-frequency panels.
+    Parameters
+    ----------
+    use_loo : bool, default True
+        Use the leave-one-out cross-sectional average as factor proxy.
+        Set False for the plain cross-sectional average (faster, more biased
+        in small samples). Silently ignored when ``always_observed`` is set,
+        since the tall-block proxy already excludes the imputation target.
+    factor_vars : sequence of int or None
+        Which variables to use for the factor proxy. Useful for mixed-frequency
+        panels where only high-frequency variables should enter the proxy.
+    always_observed : sequence of int or None
+        Optional indices of fully observed units. When set, the factor proxy
+        is constructed from these units (the "tall block" design) and both
+        ``use_loo`` and the LOO machinery are bypassed.
     """
 
-    def __init__(self, use_loo=True, factor_vars=None):
+    def __init__(self, use_loo=True, factor_vars=None, always_observed=None):
         self.use_loo = use_loo
         self.factor_vars = factor_vars
+        self.always_observed = always_observed
         self.fhat_ = None
         self.lam_hat_ = None
         self.C_fit_ = None
@@ -26,17 +37,25 @@ class FBICA:
         T, N, m = X.shape
         fvar = self._fvar_idx(m)
         m_f = len(fvar)
+        ao = self._validate_always_observed(X, fvar)
 
-        if self.use_loo and N < 2:
+        if ao is None and self.use_loo and N < 2:
             raise ValueError(f"LOO needs N>=2, got N={N}.")
 
         X_f = X[:, :, fvar]
-        fhat = self._proxy_loo(X_f, fvar) if self.use_loo else self._proxy_plain(X_f, fvar)
+        if ao is not None:
+            # tall-block proxy: use_loo is irrelevant here because i_pt
+            # is never in ao by construction
+            fhat = self._proxy_always_observed(X_f, fvar, ao)
+        elif self.use_loo:
+            fhat = self._proxy_loo(X_f, fvar)
+        else:
+            fhat = self._proxy_plain(X_f, fvar)
         self.fhat_ = fhat
 
         lam = np.empty((N, m_f, m))
         for i in range(N):
-            fi = fhat[i] if self.use_loo else fhat
+            fi = fhat[i] if fhat.ndim == 3 else fhat
             for k in range(m):
                 obs = ~np.isnan(X[:, i, k])
                 n_obs = int(obs.sum())
@@ -49,7 +68,7 @@ class FBICA:
         self.lam_hat_ = lam
 
         # C[t,i,b] = fhat[i,t,:] @ lam[i,:,b]
-        C = (np.einsum("idb,itd->tib", lam, fhat) if self.use_loo
+        C = (np.einsum("idb,itd->tib", lam, fhat) if fhat.ndim == 3
              else np.einsum("idb,td->tib", lam, fhat))
 
         bad = np.isnan(X) & ~np.isfinite(C)
@@ -77,11 +96,19 @@ class FBICA:
         if verbose:
             itr = tqdm(itr, desc="Expanding window")
         for t in itr:
-            sub = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars)
+            sub = FBICA(
+                use_loo=self.use_loo,
+                factor_vars=self.factor_vars,
+                always_observed=self.always_observed,
+            )
             out[t] = sub.fit_transform(X[:t + 1])[t]
 
         # re-fit on the full sample so fhat_/lam_hat_/C_fit_ reflect everything
-        full = FBICA(use_loo=self.use_loo, factor_vars=self.factor_vars)
+        full = FBICA(
+            use_loo=self.use_loo,
+            factor_vars=self.factor_vars,
+            always_observed=self.always_observed,
+        )
         full.fit_transform(X)
         self.fhat_, self.lam_hat_, self.C_fit_ = full.fhat_, full.lam_hat_, full.C_fit_
         return out
@@ -107,6 +134,12 @@ class FBICA:
                 f"plain proxy: every unit missing at t={t}, var={fvar[j]}. use LOO or drop that period."
             )
         return np.nanmean(X_f, axis=1)
+
+    def _proxy_always_observed(self, X_f, fvar, ao):
+        fhat = np.nanmean(X_f[:, ao, :], axis=1)
+        if not np.isfinite(fhat).all():
+            raise ValueError("always_observed proxy is non-finite.")
+        return fhat
 
     def _proxy_loo(self, X_f, fvar):
         # subtract unit i's contribution from the total before dividing
@@ -147,6 +180,30 @@ class FBICA:
             if not isinstance(j, (int, np.integer)) or not 0 <= j < m:
                 raise ValueError(f"bad factor_vars entry: {j!r} (m={m}).")
         return idx
+
+    def _validate_always_observed(self, X, fvar):
+        if self.always_observed is None:
+            return None
+
+        try:
+            ao_raw = list(self.always_observed)
+        except TypeError as exc:
+            raise ValueError("always_observed must be a sequence of unit indices.") from exc
+        if not ao_raw:
+            raise ValueError("always_observed must contain at least one unit index.")
+        if any(not isinstance(i, Integral) or isinstance(i, bool) for i in ao_raw):
+            raise ValueError("always_observed entries must be integers.")
+
+        ao = np.asarray(ao_raw, dtype=int)
+        N = X.shape[1]
+        bad = ao[(ao < 0) | (ao >= N)]
+        if bad.size:
+            raise ValueError(f"always_observed has out-of-bounds unit index {bad[0]} for N={N}.")
+        if len(set(ao.tolist())) != len(ao):
+            raise ValueError("always_observed has duplicates.")
+        if np.isnan(X[:, ao, :][:, :, fvar]).any():
+            raise ValueError("always_observed units must be observed for all factor variables.")
+        return ao
 
     def _check_X(self, X):
         X = np.asarray(X, dtype=float)
