@@ -56,7 +56,7 @@ result.lower       # lower bounds
 result.upper       # upper bounds
 ```
 
-If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average, which can improve precision when the always-observed units are representative:
+If you have a "tall block" of units that are always fully observed, pass their indices as `always_observed`. The factor proxy is then built from that block instead of the LOO average.
 
 ```python
 # units 0–4 are always observed — use them as the factor proxy
