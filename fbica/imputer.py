@@ -7,21 +7,6 @@ class FBICA:
     """
     FBI-CA imputer. Fits loadings by OLS on the cross-sectional average factor
     proxy and fills missing cells with the fitted common component.
-
-    Parameters
-    ----------
-    use_loo : bool, default True
-        Use the leave-one-out cross-sectional average as factor proxy.
-        Set False for the plain cross-sectional average (faster, more biased
-        in small samples). Silently ignored when ``always_observed`` is set,
-        since the tall-block proxy already excludes the imputation target.
-    factor_vars : sequence of int or None
-        Which variables to use for the factor proxy. Useful for mixed-frequency
-        panels where only high-frequency variables should enter the proxy.
-    always_observed : sequence of int or None
-        Optional indices of fully observed units. When set, the factor proxy
-        is constructed from these units (the "tall block" design) and both
-        ``use_loo`` and the LOO machinery are bypassed.
     """
 
     def __init__(self, use_loo=True, factor_vars=None, always_observed=None):
