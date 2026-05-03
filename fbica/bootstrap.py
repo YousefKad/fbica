@@ -19,7 +19,12 @@ class FBICABootstrap:
     """Bootstrap CI/PI for FBI-CA imputations.
 
     interval_type="CI" uses a block-wild bootstrap (Algorithm 1).
+        draws store C^star_{i,t,b}; endpoints are 2*Chat - q.
+
     interval_type="PI" uses an iid pairs bootstrap (Algorithm 2).
+        draws store the bootstrap forecast error
+            Delta^star = C^star - (Chat + e_dagger),
+        the analogue of Chat - x. Endpoints are Chat - q.
     """
 
     def __init__(self, interval_type="CI", use_loo=True, factor_vars=None,
@@ -60,7 +65,8 @@ class FBICABootstrap:
         if self.interval_type == "CI":
             draws = self._loop_ci(X, imp, resid_c, target_points, fvar_idx, ao, rng)
         else:
-            draws = self._loop_pi(X, imp, resid_c, target_points, fvar_idx, ao, rng)
+            draws = self._loop_pi(X, imp, point_est, resid_c, target_points,
+                                  fvar_idx, ao, rng)
 
         # check we actually got draws
         valid = np.isfinite(draws).sum(axis=0)
@@ -77,10 +83,19 @@ class FBICABootstrap:
         q_lo = np.nanquantile(draws, a / 2, axis=0)
         q_hi = np.nanquantile(draws, 1 - a / 2, axis=0)
 
+        if self.interval_type == "CI":
+            lower = 2 * point_est - q_hi
+            upper = 2 * point_est - q_lo
+        else:
+            # draws are Delta^star = C^star - (Chat + e_dagger), the analogue of
+            # Chat - x. Endpoints are Chat - q_hi, Chat - q_lo.
+            lower = point_est - q_hi
+            upper = point_est - q_lo
+
         return BootstrapResult(
             point_est=point_est,
-            lower=2 * point_est - q_hi,
-            upper=2 * point_est - q_lo,
+            lower=lower,
+            upper=upper,
             draws=draws,
         )
 
@@ -132,7 +147,7 @@ class FBICABootstrap:
 
         return draws
 
-    def _loop_pi(self, X, imp, resid_c, target_points, fvar_idx, ao, rng):
+    def _loop_pi(self, X, imp, point_est, resid_c, target_points, fvar_idx, ao, rng):
         T, N, m = X.shape
         lam = imp.lam_hat_
         obs_mask = ~np.isnan(X)
@@ -166,7 +181,9 @@ class FBICABootstrap:
                 except np.linalg.LinAlgError:
                     continue
 
-                draws[b, j] = f_star[t_pt, :] @ lam_star + rng.choice(res_pool)
+                c_star = f_star[t_pt, :] @ lam_star
+                e_dagger = rng.choice(res_pool)
+                draws[b, j] = c_star - (point_est[j] + e_dagger)
 
         return draws
 
