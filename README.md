@@ -12,8 +12,8 @@ The leave-one-out (LOO) variant (the default)  excludes unit i when constructing
 
 The package also provides bootstrap confidence and prediction intervals:
 
-- **CI** — for the common component. Block-wild bootstrap with block length ceil(T^(1/3)), accounting for temporal dependence.
-- **PI** — for the realised value including the idiosyncratic error. iid pairs bootstrap with residual resampling. 
+- **CI**: for the common component. Block-wild bootstrap with block length ceil(T^(1/3)), accounting for temporal dependence.
+- **PI**: for the realised value including the idiosyncratic error. iid pairs bootstrap with residual resampling. 
 
 
 ## Installation
